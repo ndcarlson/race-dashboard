@@ -99,31 +99,35 @@ def update_graphs(distance_range, selected_country):
         filtered_df = filtered_df[filtered_df['country'] == selected_country]
 
     # Bar Chart
-    top_elevation = filtered_df.sort_values(by='elevation_gain', ascending=False).head(10)
-    fig1 = px.bar(
-        top_elevation,
-        x='race',
-        y='elevation_gain',
-        title='Top 10 Races by Elevation Gain',
-        labels={'elevation_gain': 'Elevation Gain (ft)', 'race': 'Race Name'},
-        template='plotly_dark',
-        text='elevation_gain'
-    )
-    fig1.update_traces(marker_color='indianred', textposition='outside')
-    fig1.update_layout(showlegend=False, xaxis_tickangle=-45)
+top_elevation = filtered_df.sort_values(by='elevation_gain', ascending=False).head(10)
+fig1 = px.bar(
+    top_elevation,
+    x='race',
+    y='elevation_gain',
+    title='Top 10 Races by Elevation Gain',
+    labels={'elevation_gain': 'Elevation Gain (ft)', 'race': 'Race Name'},
+    template='plotly_dark',
+    text='elevation_gain'
+)
+fig1.update_traces(marker_color='indianred', textposition='outside')
+fig1.update_layout(
+    showlegend=False,
+    xaxis_tickangle=-45,
+    bargap=0.3  # <-- Add more space between bars
+)
 
-    if not top_elevation.empty:
-        highest = top_elevation.iloc[0]
-        fig1.add_annotation(
-            x=highest['race'],
-            y=highest['elevation_gain'] + 1000,
-            text="⬆️ Highest Elevation",
-            showarrow=True,
-            arrowhead=2,
-            ax=0,
-            ay=-30,
-            font=dict(color='cyan')
-        )
+if not top_elevation.empty:
+    highest = top_elevation.iloc[0]
+    fig1.add_annotation(
+        x=highest['race'],
+        y=highest['elevation_gain'] * 1.1,  # <-- Raise the annotation higher
+        text="⬆️ Highest Elevation",
+        showarrow=True,
+        arrowhead=2,
+        ax=0,
+        ay=-30,
+        font=dict(color='cyan')
+    )
 
     # Scatter Plot
     fig2 = px.scatter(
