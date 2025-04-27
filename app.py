@@ -9,25 +9,33 @@ df = pd.read_csv(url)
 df = df.dropna(subset=['elevation_gain', 'distance'])
 df['country'] = df['country'].astype(str).str.strip().str.title()
 
-# Initialize app
+# External Stylesheets (for font)
 external_stylesheets = [
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
 ]
 
-app = Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server  # For deployment
+# Initialize app
+app = Dash(
+    __name__,
+    external_stylesheets=external_stylesheets,
+    title="Race Insights",             # Browser tab title
+    update_title="Loading..."           # What shows while loading
+)
+server = app.server  # For Render deployment
 
 # Layout
 app.layout = html.Div([
+    # Header
     html.Div([
         html.H1("🏃‍♂️ Race Insights Dashboard", style={
-            'textAlign': 'center', 
-            'fontFamily': 'Roboto', 
-            'color': '#00CCFF', 
+            'textAlign': 'center',
+            'fontFamily': 'Roboto',
+            'color': '#00CCFF',
             'padding': '10px'
         }),
     ], style={'backgroundColor': '#1e1e1e'}),
 
+    # Filters Section
     html.Div([
         html.Div([
             html.Label("Filter by Distance Range (miles):", style={'color': 'white'}),
@@ -51,14 +59,25 @@ app.layout = html.Div([
                 placeholder="Select a country",
                 style={'width': '50%'}
             ),
-        ])
+        ]),
     ], style={'padding': '20px', 'backgroundColor': '#1e1e1e'}),
 
+    # Divider
+    html.Hr(style={'borderColor': 'white'}),
+
+    # Graphs Section with loading spinner
     html.Div([
-        dcc.Graph(id='bar-elevation', style={'overflowX': 'auto'}),
-        dcc.Graph(id='scatter-elevation-distance')
+        dcc.Loading(
+            id="loading-graphs",
+            type="circle",
+            children=[
+                dcc.Graph(id='bar-elevation', style={'overflowX': 'auto', 'height': '600px'}),
+                dcc.Graph(id='scatter-elevation-distance', style={'overflowX': 'auto', 'height': '500px'})
+            ]
+        )
     ], style={'padding': '20px', 'backgroundColor': '#2b2b2b'}),
 
+    # Insights Section
     html.Div([
         html.H4("Takeaway Insights", style={'marginTop': '30px', 'color': '#00CCFF', 'fontFamily': 'Roboto'}),
         html.P("🏔️ The top 10 races with the highest elevation gain highlight extreme endurance events, often over long distances.", style={'color': 'white'}),
@@ -136,6 +155,6 @@ def update_graphs(distance_range, selected_country):
 
     return fig1, fig2
 
-# Run the app
+# Run app
 if __name__ == '__main__':
     app.run(debug=True, port=8050)
