@@ -133,19 +133,19 @@ def update_graphs(distance_range, selected_country, reset_clicks):
     if not top_elevation.empty:
         highest = top_elevation.iloc[0]
         fig1.add_annotation(
-        x=highest['race'],
-        y=highest['elevation_gain'] * 1.1,
-        text="⬆️ Highest Elevation",
-        showarrow=True,
-        arrowhead=2,
-        ax=-50,
-        ay=50,
-        font=dict(color='cyan', size=14),
-        bgcolor='rgba(0, 204, 255, 0.2)',
-        bordercolor='cyan',
-        borderwidth=1,
-        xshift=40
-    )
+            x=highest['race'],
+            y=highest['elevation_gain'] * 1.1,
+            text="⬆️ Highest Elevation",
+            showarrow=True,
+            arrowhead=2,
+            ax=-50,
+            ay=50,
+            font=dict(color='cyan', size=14),
+            bgcolor='rgba(0, 204, 255, 0.2)',
+            bordercolor='cyan',
+            borderwidth=1,
+            xshift=40
+        )
 
     # Scatter Plot
     fig2 = px.scatter(
