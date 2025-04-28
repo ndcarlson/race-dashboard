@@ -115,8 +115,8 @@ def update_graphs(distance_range, selected_country):
     if not top_elevation.empty:
         highest = top_elevation.iloc[0]
         fig1.add_annotation(
-            x=highest['race'],
-            y=highest['elevation_gain'] + 1000,
+            x=highest['race'] + 200,
+            y=highest['elevation_gain'] * 1.1,
             text="⬆️ Highest Elevation",
             showarrow=True,
             arrowhead=2,
