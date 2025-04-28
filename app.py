@@ -176,7 +176,3 @@ def update_graphs(distance_range, selected_country, reset_clicks):
         )
 
     return fig1, fig2
-
-# Run app
-if __name__ == '__main__':
-    app.run(debug=True, port=8050)
