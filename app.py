@@ -93,15 +93,16 @@ app.layout = html.Div([
     ], style={'padding': '20px', 'backgroundColor': '#1e1e1e'})
 ])
 
-# Callback
+# Updated Callback
 @app.callback(
     [Output('bar-elevation', 'figure'),
      Output('scatter-elevation-distance', 'figure')],
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
-     Input('reset-button', 'n_clicks')]
+     Input('reset-button', 'n_clicks'),
+     Input('bar-elevation', 'clickData')]   # <-- NEW!
 )
-def update_graphs(distance_range, selected_country, reset_clicks):
+def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     ctx = callback_context
 
     if ctx.triggered and ctx.triggered[0]['prop_id'].split('.')[0] == 'reset-button':
@@ -158,6 +159,35 @@ def update_graphs(distance_range, selected_country, reset_clicks):
     )
     fig2.update_layout(hovermode='closest')
 
+    # Highlight clicked race in scatter plot
+    if clickData and 'points' in clickData:
+        clicked_race = clickData['points'][0]['x']
+        fig2.update_traces(
+            marker=dict(
+                line=dict(
+                    width=2,
+                    color='cyan'
+                )
+            ),
+            selector=dict(mode='markers')
+        )
+        fig2.update_traces(
+            selectedpoints=[i for i, race in enumerate(filtered_df['race']) if race == clicked_race],
+            selected=dict(
+                marker=dict(
+                    size=20,
+                    color='yellow',
+                    opacity=1
+                )
+            ),
+            unselected=dict(
+                marker=dict(
+                    opacity=0.2
+                )
+            )
+        )
+
+    # Extreme Gain callout
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
