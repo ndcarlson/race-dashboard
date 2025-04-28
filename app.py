@@ -140,12 +140,14 @@ def update_graphs(distance_range, selected_country, reset_clicks):
             arrowhead=2,
             ax=-50,
             ay=50,
-            xshift=50,
+            xanchor='left',
+            yanchor='bottom',
             font=dict(color='cyan', size=14),
             bgcolor='rgba(0, 204, 255, 0.2)',
             bordercolor='cyan',
             borderwidth=1
         )
+
 
     # Scatter Plot
     fig2 = px.scatter(
