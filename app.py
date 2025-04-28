@@ -9,7 +9,7 @@ df = pd.read_csv(url)
 df = df.dropna(subset=['elevation_gain', 'distance'])
 df['country'] = df['country'].astype(str).str.strip().str.title()
 
-# External Stylesheets (for font)
+# External Stylesheets
 external_stylesheets = [
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
 ]
@@ -138,9 +138,12 @@ def update_graphs(distance_range, selected_country, reset_clicks):
             text="⬆️ Highest Elevation",
             showarrow=True,
             arrowhead=2,
-            ax=0,
-            ay=-30,
-            font=dict(color='cyan')
+            ax=-80,    # Move LEFT
+            ay=80,     # Move DOWN
+            font=dict(color='cyan', size=14),
+            bgcolor='rgba(0, 204, 255, 0.2)',
+            bordercolor='cyan',
+            borderwidth=1
         )
 
     # Scatter Plot
