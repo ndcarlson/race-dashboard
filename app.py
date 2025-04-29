@@ -1,7 +1,7 @@
 # app.py
 import pandas as pd
 import plotly.express as px
-from dash import Dash, dcc, html, Input, Output, callback_context
+from dash import Dash, dcc, html, Input, Output, callback_context, no_update
 
 # Load dataset
 url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNUbSB7i6_xLP-z36OdxHiypbfY08leVeGsZccKX_46FetbPwuLfMz74lcJqaU8jr-V7VKRKIZxrh0/pub?output=csv'
@@ -97,7 +97,7 @@ app.layout = html.Div([
 @app.callback(
     [Output('bar-elevation', 'figure'),
      Output('scatter-elevation-distance', 'figure'),
-     Output('country-filter', 'value')],  # NEW: control dropdown
+     Output('country-filter', 'value')],  # New output to reset dropdown
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
      Input('reset-button', 'n_clicks'),
@@ -107,16 +107,16 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
-    # If Reset button clicked
+    # Reset filters
     if triggered_id == 'reset-button':
         distance_range = [df['distance'].min(), df['distance'].max()]
         selected_country = None
         clickData = None
-        reset_country_dropdown = None
+        reset_country_value = None  # Will reset dropdown to placeholder
     else:
-        reset_country_dropdown = no_update
+        reset_country_value = no_update  # Do not update dropdown
 
-    # Filter data
+    # Apply filters
     filtered_df = df[df['distance'].between(distance_range[0], distance_range[1])]
     if selected_country:
         filtered_df = filtered_df[filtered_df['country'] == selected_country]
@@ -167,9 +167,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     if clickData and 'points' in clickData and triggered_id != 'reset-button':
         clicked_race = clickData['points'][0]['x']
         fig2.update_traces(
-            marker=dict(
-                line=dict(width=2, color='cyan')
-            ),
+            marker=dict(line=dict(width=2, color='cyan')),
             selector=dict(mode='markers')
         )
         fig2.update_traces(
@@ -178,7 +176,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             unselected=dict(marker=dict(opacity=0.2))
         )
 
-    # Callout
+    # Annotation for outliers
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
@@ -192,7 +190,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             font=dict(color='cyan')
         )
 
-    return fig1, fig2, reset_country_dropdown
+    return fig1, fig2, reset_country_value
 
 # Run app
 if __name__ == '__main__':
