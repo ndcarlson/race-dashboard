@@ -1,7 +1,7 @@
 # app.py
 import pandas as pd
 import plotly.express as px
-from dash import Dash, dcc, html, Input, Output, callback_context, no_update, ctx
+from dash import Dash, dcc, html, Input, Output, callback_context, no_update
 
 # Load dataset
 url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNUbSB7i6_xLP-z36OdxHiypbfY08leVeGsZccKX_46FetbPwuLfMz74lcJqaU8jr-V7VKRKIZxrh0/pub?output=csv'
@@ -102,23 +102,22 @@ app.layout = html.Div([
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
      Input('reset-button', 'n_clicks'),
-     Input('bar-elevation', 'clickData')],
-    prevent_initial_call=True
+     Input('bar-elevation', 'clickData')]
 )
 def update_graphs(distance_range, selected_country, reset_clicks, clickData):
-    triggered_id = ctx.triggered_id
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
     reset_country_value = no_update
     reset_distance_value = no_update
-    filtered_clickData = clickData
 
-    # Reset filters if reset button clicked
+    # Handle reset
     if triggered_id == 'reset-button':
         distance_range = [df['distance'].min(), df['distance'].max()]
         selected_country = None
-        filtered_clickData = None
         reset_country_value = None
         reset_distance_value = [df['distance'].min(), df['distance'].max()]
+        clickData = None  # <<< Clear clickData properly here
 
     filtered_df = df[df['distance'].between(distance_range[0], distance_range[1])]
     if selected_country:
@@ -167,9 +166,9 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     )
     fig2.update_layout(hovermode='closest')
 
-    # Highlight if a bar was clicked, and NOT during reset
-    if filtered_clickData and 'points' in filtered_clickData and triggered_id != 'reset-button':
-        clicked_race = filtered_clickData['points'][0]['x']
+    # Highlight clicked race, if any (only if not reset)
+    if clickData and 'points' in clickData:
+        clicked_race = clickData['points'][0]['x']
         fig2.update_traces(
             marker=dict(line=dict(width=2, color='cyan')),
             selector=dict(mode='markers')
@@ -180,7 +179,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             unselected=dict(marker=dict(opacity=0.2))
         )
 
-    # Highlight Outlier
+    # Outlier Annotation
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
