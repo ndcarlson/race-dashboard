@@ -154,13 +154,15 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
         x='distance',
         y='elevation_gain',
         size='aid_stations',
-        hover_name='race',
+        hover_name='race',  # Race still appears as title in hover
+        hover_data=["country"],  # <-- Add this line!
         title='Distance vs Elevation Gain by Race',
         labels={'distance': 'Distance (mi)', 'elevation_gain': 'Elevation Gain (ft)'},
         template='plotly_dark',
         color='elevation_gain',
         color_continuous_scale='Viridis'
     )
+
     fig2.update_layout(hovermode='closest')
 
     # Highlight clicked race if not reset
