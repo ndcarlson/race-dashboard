@@ -89,7 +89,7 @@ app.layout = html.Div([
         html.H4("Takeaway Insights", style={'marginTop': '30px', 'color': '#00CCFF', 'fontFamily': 'Roboto'}),
         html.P("🏔️ The top 10 races with the highest elevation gain highlight extreme endurance events, often over long distances.", style={'color': 'white'}),
         html.P("📈 The scatter plot reveals a concentration of races with moderate distances and elevation gains, but also outliers with intense climbs.", style={'color': 'white'}),
-        html.P("🔍 Use the filters above to explore races by specific distance ranges and countries.", style={'color': 'white'})
+        html.P("🔍 The filter by country reveals regional patterns — for example, Andorra has multiple races with very high elevation gains despite being a small country.", style={'color': 'white'})
     ], style={'padding': '20px', 'backgroundColor': '#1e1e1e'})
 ])
 
