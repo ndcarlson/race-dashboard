@@ -96,19 +96,27 @@ app.layout = html.Div([
 # Updated Callback
 @app.callback(
     [Output('bar-elevation', 'figure'),
-     Output('scatter-elevation-distance', 'figure')],
+     Output('scatter-elevation-distance', 'figure'),
+     Output('country-filter', 'value')],  # NEW: control dropdown
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
      Input('reset-button', 'n_clicks'),
-     Input('bar-elevation', 'clickData')]   # <-- NEW!
+     Input('bar-elevation', 'clickData')]
 )
 def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     ctx = callback_context
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
-    if ctx.triggered and ctx.triggered[0]['prop_id'].split('.')[0] == 'reset-button':
+    # If Reset button clicked
+    if triggered_id == 'reset-button':
         distance_range = [df['distance'].min(), df['distance'].max()]
         selected_country = None
+        clickData = None
+        reset_country_dropdown = None
+    else:
+        reset_country_dropdown = no_update
 
+    # Filter data
     filtered_df = df[df['distance'].between(distance_range[0], distance_range[1])]
     if selected_country:
         filtered_df = filtered_df[filtered_df['country'] == selected_country]
@@ -125,11 +133,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
         text='elevation_gain'
     )
     fig1.update_traces(marker_color='indianred', textposition='outside')
-    fig1.update_layout(
-        showlegend=False,
-        xaxis_tickangle=-45,
-        bargap=0.3
-    )
+    fig1.update_layout(showlegend=False, xaxis_tickangle=-45, bargap=0.3)
 
     if not top_elevation.empty:
         highest = top_elevation.iloc[0]
@@ -159,35 +163,22 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     )
     fig2.update_layout(hovermode='closest')
 
-    # Highlight clicked race in scatter plot
-    if clickData and 'points' in clickData:
+    # Highlight clicked race if not reset
+    if clickData and 'points' in clickData and triggered_id != 'reset-button':
         clicked_race = clickData['points'][0]['x']
         fig2.update_traces(
             marker=dict(
-                line=dict(
-                    width=2,
-                    color='cyan'
-                )
+                line=dict(width=2, color='cyan')
             ),
             selector=dict(mode='markers')
         )
         fig2.update_traces(
             selectedpoints=[i for i, race in enumerate(filtered_df['race']) if race == clicked_race],
-            selected=dict(
-                marker=dict(
-                    size=20,
-                    color='yellow',
-                    opacity=1
-                )
-            ),
-            unselected=dict(
-                marker=dict(
-                    opacity=0.2
-                )
-            )
+            selected=dict(marker=dict(size=20, color='yellow', opacity=1)),
+            unselected=dict(marker=dict(opacity=0.2))
         )
 
-    # Extreme Gain callout
+    # Callout
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
@@ -201,7 +192,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             font=dict(color='cyan')
         )
 
-    return fig1, fig2
+    return fig1, fig2, reset_country_dropdown
 
 # Run app
 if __name__ == '__main__':
