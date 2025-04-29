@@ -1,7 +1,7 @@
 # app.py
 import pandas as pd
 import plotly.express as px
-from dash import Dash, dcc, html, Input, Output, callback_context, no_update
+from dash import Dash, dcc, html, Input, Output, State, callback_context, no_update
 
 # Load dataset
 url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNUbSB7i6_xLP-z36OdxHiypbfY08leVeGsZccKX_46FetbPwuLfMz74lcJqaU8jr-V7VKRKIZxrh0/pub?output=csv'
@@ -9,19 +9,17 @@ df = pd.read_csv(url)
 df = df.dropna(subset=['elevation_gain', 'distance'])
 df['country'] = df['country'].astype(str).str.strip().str.title()
 
-# External Stylesheets (for font)
 external_stylesheets = [
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
 ]
 
-# Initialize app
 app = Dash(
     __name__,
     external_stylesheets=external_stylesheets,
     title="Race Insights",
     update_title="Loading..."
 )
-server = app.server  # For Render
+server = app.server
 
 # Layout
 app.layout = html.Div([
@@ -74,6 +72,9 @@ app.layout = html.Div([
 
     html.Hr(style={'borderColor': 'white'}),
 
+    # Store for clicked race
+    dcc.Store(id='click-store', data=None),
+
     html.Div([
         dcc.Loading(
             id="loading-graphs",
@@ -93,7 +94,22 @@ app.layout = html.Div([
     ], style={'padding': '20px', 'backgroundColor': '#1e1e1e'})
 ])
 
-# Updated Callback
+# Callback to update the store when a race is clicked or reset
+@app.callback(
+    Output('click-store', 'data'),
+    [Input('bar-elevation', 'clickData'),
+     Input('reset-button', 'n_clicks')],
+    prevent_initial_call=True
+)
+def update_click_store(click_data, reset_clicks):
+    triggered = callback_context.triggered[0]['prop_id'].split('.')[0]
+    if triggered == 'reset-button':
+        return None
+    elif click_data and 'points' in click_data:
+        return click_data['points'][0]['x']
+    return no_update
+
+# Main callback to update graphs
 @app.callback(
     [Output('bar-elevation', 'figure'),
      Output('scatter-elevation-distance', 'figure'),
@@ -102,28 +118,25 @@ app.layout = html.Div([
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
      Input('reset-button', 'n_clicks'),
-     Input('bar-elevation', 'clickData')]
+     Input('click-store', 'data')]
 )
-def update_graphs(distance_range, selected_country, reset_clicks, clickData):
+def update_graphs(distance_range, selected_country, reset_clicks, stored_click):
     ctx = callback_context
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
     reset_country_value = no_update
     reset_distance_value = no_update
 
-    # Handle reset
     if triggered_id == 'reset-button':
         distance_range = [df['distance'].min(), df['distance'].max()]
         selected_country = None
         reset_country_value = None
         reset_distance_value = [df['distance'].min(), df['distance'].max()]
-        clickData = None  # <<< Clear clickData properly here
 
     filtered_df = df[df['distance'].between(distance_range[0], distance_range[1])]
     if selected_country:
         filtered_df = filtered_df[filtered_df['country'] == selected_country]
 
-    # Bar Chart
     top_elevation = filtered_df.sort_values(by='elevation_gain', ascending=False).head(10)
     fig1 = px.bar(
         top_elevation,
@@ -150,7 +163,6 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             font=dict(color='cyan')
         )
 
-    # Scatter Plot
     fig2 = px.scatter(
         filtered_df,
         x='distance',
@@ -166,20 +178,17 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     )
     fig2.update_layout(hovermode='closest')
 
-    # Highlight clicked race, if any (only if not reset)
-    if clickData and 'points' in clickData:
-        clicked_race = clickData['points'][0]['x']
+    if stored_click:
         fig2.update_traces(
             marker=dict(line=dict(width=2, color='cyan')),
             selector=dict(mode='markers')
         )
         fig2.update_traces(
-            selectedpoints=[i for i, race in enumerate(filtered_df['race']) if race == clicked_race],
+            selectedpoints=[i for i, race in enumerate(filtered_df['race']) if race == stored_click],
             selected=dict(marker=dict(size=20, color='yellow', opacity=1)),
             unselected=dict(marker=dict(opacity=0.2))
         )
 
-    # Outlier Annotation
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
@@ -194,6 +203,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
         )
 
     return fig1, fig2, reset_country_value, reset_distance_value
-# Run app
+
+# Run the app
 if __name__ == '__main__':
     app.run(debug=True, port=8050)
