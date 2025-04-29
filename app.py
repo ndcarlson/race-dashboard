@@ -1,7 +1,7 @@
 # app.py
 import pandas as pd
 import plotly.express as px
-from dash import Dash, dcc, html, Input, Output, callback_context, no_update
+from dash import Dash, dcc, html, Input, Output, callback_context, no_update, ctx
 
 # Load dataset
 url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNUbSB7i6_xLP-z36OdxHiypbfY08leVeGsZccKX_46FetbPwuLfMz74lcJqaU8jr-V7VKRKIZxrh0/pub?output=csv'
@@ -98,25 +98,25 @@ app.layout = html.Div([
     [Output('bar-elevation', 'figure'),
      Output('scatter-elevation-distance', 'figure'),
      Output('country-filter', 'value'),
-     Output('distance-filter', 'value')],  # NEW: reset the slider too
+     Output('distance-filter', 'value')],
     [Input('distance-filter', 'value'),
      Input('country-filter', 'value'),
      Input('reset-button', 'n_clicks'),
-     Input('bar-elevation', 'clickData')]
+     Input('bar-elevation', 'clickData')],
+    prevent_initial_call=True
 )
 def update_graphs(distance_range, selected_country, reset_clicks, clickData):
-    ctx = callback_context
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
+    triggered_id = ctx.triggered_id
 
-    # Defaults
     reset_country_value = no_update
     reset_distance_value = no_update
+    filtered_clickData = clickData
 
-    # Reset filters if button clicked
+    # Reset filters if reset button clicked
     if triggered_id == 'reset-button':
         distance_range = [df['distance'].min(), df['distance'].max()]
         selected_country = None
-        clickData = None
+        filtered_clickData = None
         reset_country_value = None
         reset_distance_value = [df['distance'].min(), df['distance'].max()]
 
@@ -158,7 +158,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
         y='elevation_gain',
         size='aid_stations',
         hover_name='race',
-        hover_data=['country'],  # Show country on hover
+        hover_data=['country'],
         title='Distance vs Elevation Gain by Race',
         labels={'distance': 'Distance (mi)', 'elevation_gain': 'Elevation Gain (ft)'},
         template='plotly_dark',
@@ -167,9 +167,9 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
     )
     fig2.update_layout(hovermode='closest')
 
-    # Highlight if a bar was clicked
-    if clickData and 'points' in clickData and triggered_id != 'reset-button':
-        clicked_race = clickData['points'][0]['x']
+    # Highlight if a bar was clicked, and NOT during reset
+    if filtered_clickData and 'points' in filtered_clickData and triggered_id != 'reset-button':
+        clicked_race = filtered_clickData['points'][0]['x']
         fig2.update_traces(
             marker=dict(line=dict(width=2, color='cyan')),
             selector=dict(mode='markers')
@@ -180,7 +180,7 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
             unselected=dict(marker=dict(opacity=0.2))
         )
 
-    # Highlight outlier
+    # Highlight Outlier
     outlier = filtered_df[filtered_df['elevation_gain'] > 14000]
     if not outlier.empty:
         fig2.add_annotation(
@@ -195,7 +195,6 @@ def update_graphs(distance_range, selected_country, reset_clicks, clickData):
         )
 
     return fig1, fig2, reset_country_value, reset_distance_value
-
 # Run app
 if __name__ == '__main__':
     app.run(debug=True, port=8050)
